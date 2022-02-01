@@ -1,0 +1,53 @@
+<!--
+    Autor: Noelia Arroyo Castaño
+    Práctica Final: Pong en Three.js
+    Asignatura: GyV3D
+-->
+<!--
+    Partes implementadas:
+        - Funcionalidad básica
+        - Funcionalidad avanzada:
+            *Velocidad de desplazamiento variable
+            *Ángulo de rebote
+            *Posibilidad de ganar a la CPU.
+            
+        - Mejoras:
+            *Crónometro: Tiempo que dura la partida, se para cada vez que alguno mete gol.
+            *Diferentes niveles de juego: Si no se selecciona ninguno, por defecto comienza el nivel medio.
+            *Contador en 3D
+            *Sonido: Cada vez que se mete gol, cuando la pelota rebota en la pala y en las paredes, 
+                    cuando se pierde y gana.
+
+-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PONG-3D</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/103/three.min.js"></script>
+    <script src="PF_NoeliaArroyo.js" defer></script>
+    <link rel="stylesheet" href="PF_NoeliaArroyo.css">
+</head>
+<body onload="init()">
+    <br>
+    <h1>PONG-3D</h1>
+    
+    <h3>SELECT YOUR LEVEL</h3>
+    <button id="easy" ><b>EASY</b></button>
+    <button id="medium"><b>MEDIUM</b></button>
+    <button id="hard"><b>HARD</b></button>
+    <h4>¡¡¡press the spacebar to start!!!</h4>
+
+    <p><b>The first to reach five points wins, challenge your computer</b></p>
+    <div id="cronometro">
+        <span id="horas">00</span>:
+        <span id="minutos">00</span>:
+        <span id="segundos">00</span>
+    </div>
+    <br>
+</body>
+</html>

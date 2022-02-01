@@ -1,0 +1,203 @@
+
+<!DOCTYPE html>
+<!--Autor: Noelia Arroyo Castaño-->
+<!--Asignatura: GyV3D-->
+<html>
+
+<head>
+    <title>Dibujar puntos de color haciendo click en canvas</title>
+</head>
+
+<body onload="init()">
+    <canvas id="myCanvas" width="640" height="480"></canvas>
+</body>
+
+<script id="shaderVs" type="x-shader/x-vertex">
+	attribute vec4 a_Position;
+  attribute float a_PointSize;
+    void main() {
+        gl_Position = a_Position; //posicion vertex
+        gl_PointSize = a_PointSize; //tamaño pixel
+    }
+</script>
+
+<script id="shaderFs" type="x-shader/x-fragment">
+    precision mediump float;
+    uniform vec4 u_FragColor;
+    void main() {
+        gl_FragColor = u_FragColor;
+    }
+</script>
+
+<script>
+    function init() {
+        // Get canvas object from the DOM
+        var canvas = document.getElementById("myCanvas");
+
+        // Init WebGL context
+        var gl = canvas.getContext("webgl");
+        if (!gl) {
+            console.log("Failed to get the rendering context for WebGL");
+            return;
+        }
+
+        // Clear canvas
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        // Init shaders
+        var vs = document.getElementById('shaderVs').innerHTML;
+        var fs = document.getElementById('shaderFs').innerHTML;
+
+
+        if (!initShaders(gl, vs, fs)) {
+            console.log('Failed to intialize shaders.');
+            return;
+        }
+
+    }
+
+
+    function initShaders(gl, vs_source, fs_source) {
+        // Compile shaders
+        var vertexShader = makeShader(gl, vs_source, gl.VERTEX_SHADER);
+        var fragmentShader = makeShader(gl, fs_source, gl.FRAGMENT_SHADER);
+
+        // Create program
+        var glProgram = gl.createProgram();
+
+        // Attach and link shaders to the program
+        gl.attachShader(glProgram, vertexShader);
+        gl.attachShader(glProgram, fragmentShader);
+        gl.linkProgram(glProgram);
+        if (!gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
+            alert("Unable to initialize the shader program");
+            return false;
+        }
+
+        // Use program
+        gl.useProgram(glProgram);
+        gl.program = glProgram;
+
+        return true;
+    }
+    function makeShader(gl, src, type) {
+        var shader = gl.createShader(type);
+        gl.shaderSource(shader, src);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            alert("Error compiling shader: " + gl.getShaderInfoLog(shader));
+            return;
+        }
+        return shader;
+    }
+</script>
+
+<script>
+    point_click = [];
+    color = [];
+    size_click = [];
+    //Get canvas object from the document
+    var canvas = document.getElementById("myCanvas");
+    //Init WebGL context
+    var gl = canvas.getContext("webgl");
+    //Register event handler
+    canvas.onmousedown = function(ev){
+      click(ev,gl,canvas);
+    };
+
+    //cambia las coordenadas click a formato webGL
+    function click(ev,gl,canvas){
+      //Coordinates of canvas origin
+      var rect = ev.target.getBoundingClientRect();
+
+      //relative x coordinate of click in canvas
+      var clickX = ev.clientX - rect.left;
+
+      //relative y coordinate of click in myCanvas
+      var clickY = ev.clientY - rect.top;
+
+      //WebGL coordinates (3D)
+      var halfCanvasWidht = canvas.width /2;
+      var halfCanvasHeight = canvas.height/2;
+      var x = (clickX - halfCanvasWidht) / halfCanvasWidht;
+      var y = (halfCanvasHeight - clickY) / halfCanvasHeight;
+      var xyz = [x,y,0];
+      point_click.push(xyz);
+
+      //Distancia de los puntos
+      var distancia = 20 * Math.sqrt(Math.pow(x,2) + Math.pow(y,2));
+      console.log(distancia);
+
+      var dim = 3;
+      var vertices = new Float32Array([
+        x, y + 0.05, 0,
+        x + 0.05, y - 0.05, 0,
+        x - 0.05, y - 0.05, 0,
+      ]);
+      var n = vertices.length / dim;
+
+      //Colores que necesito
+      var white = [0.0, 0.0, 0.0, 0.0];
+      var green = [0.0,1.0,0.0,1.0];
+      var red = [1.0,0.0,0.0,1.0];
+      var blue = [0.0, 0.0, 1.0, 1.0];
+      var yellow = [1.0,1.0,0.0,1.0];
+
+      //Coordenadas plano
+      var higher_right = (x >= 0) && (y >= 0);
+      var lower_right = (x >= 0) && (y <= 0);
+      var lower_left = (x <= 0) && (y <= 0);
+      var higher_left = (x <= 0) && (y >= 0);
+
+      if(x >= 0.7 || x <= -0.7 || y<=-0.7 || y >= 0.7){
+        color.push(white);//Blanco
+        size_click.push(distancia);
+      } else if(higher_right){
+        color.push(green); //Verde
+        size_click.push(distancia);
+      } else if (higher_left){
+        color.push(red); //Rojo
+        size_click.push(distancia);
+      } else if(lower_left){
+        color.push(blue); //Azul
+        size_click.push(distancia);
+      } else if(lower_right){
+        color.push(yellow); //Amarillo
+        size_click.push(distancia);
+      }
+      // Clear canvas
+      gl.clearColor(0.0, 0.0, 0.0, 1.0); //Negro
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      var vertexBuffer = gl.createBuffer();
+      if(!vertexBuffer){
+        console.log('Failed to create the buffer object');
+        return -1;
+      }
+      // Conectamos los buffers a los shaders
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+      var a_Position = gl.getAttribLocation(gl.program, "a_Position");
+      var u_FragColor = gl.getUniformLocation(gl.program, "u_FragColor");
+      if(u_FragColor<0){
+        console.log('Failed to get the storage location of u_FragColor');
+        return -1;
+      }
+      var a_PointSize = gl.getAttribLocation(gl.program, "a_PointSize");
+      var i;
+      for(i=0; i<point_click.length; i++){
+        gl.vertexAttrib2fv(a_Position, point_click[i]);
+        gl.vertexAttribPointer(a_Position, dim, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(a_Position);
+        gl.uniform4fv(u_FragColor,color[i]);
+        gl.drawArrays(gl.TRIANGLES, 0, n);
+        console.log(point_click[i]);
+      };
+    }
+
+
+</script>
+
+</html>
